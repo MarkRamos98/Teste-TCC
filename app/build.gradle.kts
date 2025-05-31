@@ -33,6 +33,9 @@ android {
 
 dependencies {
 
+    implementation(libs.viewpager2)
+    implementation(libs.circleindicator)
+
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -41,3 +44,4 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
+

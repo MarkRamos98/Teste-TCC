@@ -1,64 +1,123 @@
 package br.com.etecia.iservice;
 
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link FragmentHome#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
+
+import java.util.Arrays;
+import java.util.List;
+
 public class FragmentHome extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private ViewPager2 viewPager;
+    private Handler autoScrollHandler = new Handler();
+    private Runnable autoScrollRunnable;
 
     public FragmentHome() {
         // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment FragmentHome.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static FragmentHome newInstance(String param1, String param2) {
-        FragmentHome fragment = new FragmentHome();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home_layout, container, false);
+        View view = inflater.inflate(R.layout.fragment_home_layout, container, false);
+
+        // Configurar o ViewPager2
+        viewPager = view.findViewById(R.id.viewPager);
+
+        // Lista de imagens
+        List<Integer> images = Arrays.asList(
+                R.drawable.Banana
+        );
+
+        // Configurar o adapter
+        CarouselAdapter adapter = new CarouselAdapter(images);
+        viewPager.setAdapter(adapter);
+
+        // Configurar auto-scroll
+        setupAutoScroll();
+
+        return view;
+    }
+
+    private void setupAutoScroll() {
+        final long AUTO_SCROLL_DELAY = 3000; // 3 segundos
+
+        autoScrollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (viewPager != null && viewPager.getAdapter() != null) {
+                    int currentItem = viewPager.getCurrentItem();
+                    int totalItems = viewPager.getAdapter().getItemCount();
+                    viewPager.setCurrentItem((currentItem + 1) % totalItems, true);
+                    autoScrollHandler.postDelayed(this, AUTO_SCROLL_DELAY);
+                }
+            }
+        };
+
+        autoScrollHandler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY);
+
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                autoScrollHandler.removeCallbacks(autoScrollRunnable);
+                autoScrollHandler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY);
+            }
+        });
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Limpar handlers para evitar memory leaks
+        autoScrollHandler.removeCallbacks(autoScrollRunnable);
+        if (viewPager != null) {
+            viewPager.unregisterOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {});
+        }
+    }
+
+    // Adapter para o ViewPager2
+    private static class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.CarouselViewHolder> {
+        private final List<Integer> images;
+
+        public CarouselAdapter(List<Integer> images) {
+            this.images = images;
+        }
+
+        @NonNull
+        @Override
+        public CarouselViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.iten_carossel_layout, parent, false);
+            return new CarouselViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull CarouselViewHolder holder, int position) {
+            holder.imageView.setImageResource(images.get(position));
+        }
+
+        @Override
+        public int getItemCount() {
+            return images.size();
+        }
+
+        static class CarouselViewHolder extends RecyclerView.ViewHolder {
+            ImageView imageView;
+
+            public CarouselViewHolder(@NonNull View itemView) {
+                super(itemView);
+                imageView = itemView.findViewById(R.id.imageView);
+            }
+        }
     }
 }
